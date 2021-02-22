@@ -1,0 +1,167 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ramonrpa <ramon.rpa2018@gmail.com>
+Date: Sun, 21 Feb 2021 14:22:27 -0300
+Subject: [PATCH] Add Backtool slot
+
+
+diff --git a/src/main/java/net/minecraft/server/ContainerPlayer.java b/src/main/java/net/minecraft/server/ContainerPlayer.java
+index d957d2d2e40b803a49f0b32a7be44097fe74cba2..7695c1777390e86076dc0ae226d0ebdc7c0c5d14 100644
+--- a/src/main/java/net/minecraft/server/ContainerPlayer.java
++++ b/src/main/java/net/minecraft/server/ContainerPlayer.java
+@@ -13,6 +13,7 @@ public class ContainerPlayer extends ContainerRecipeBook<InventoryCrafting> {
+     public static final MinecraftKey f = new MinecraftKey("item/empty_armor_slot_leggings");
+     public static final MinecraftKey g = new MinecraftKey("item/empty_armor_slot_boots");
+     public static final MinecraftKey h = new MinecraftKey("item/empty_armor_slot_shield");
++    public static final MinecraftKey hi = new MinecraftKey("item/empty_armor_slot_backtool");
+     private static final MinecraftKey[] j = new MinecraftKey[]{ContainerPlayer.g, ContainerPlayer.f, ContainerPlayer.e, ContainerPlayer.d};
+     private static final EnumItemSlot[] k = new EnumItemSlot[]{EnumItemSlot.HEAD, EnumItemSlot.CHEST, EnumItemSlot.LEGS, EnumItemSlot.FEET};
+     // CraftBukkit start
+@@ -37,21 +38,21 @@ public class ContainerPlayer extends ContainerRecipeBook<InventoryCrafting> {
+         this.player = playerinventory; // CraftBukkit - save player
+         setTitle(new ChatMessage("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
+         // CraftBukkit end
+-        this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 154, 28)));
++        this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 288, 24)));
+ 
+         int i;
+         int j;
+ 
+         for (i = 0; i < 2; ++i) {
+             for (j = 0; j < 2; ++j) {
+-                this.a(new Slot(this.craftInventory, j + i * 2, 98 + j * 18, 18 + i * 18));
++                this.a(new Slot(this.craftInventory, j + i * 2, 216 + j * 22, 12 + i * 24));
+             }
+         }
+ 
+         for (i = 0; i < 4; ++i) {
+             final EnumItemSlot enumitemslot = ContainerPlayer.k[i];
+ 
+-            this.a(new Slot(playerinventory, 39 - i, 8, 8 + i * 18) {
++            this.a(new Slot(playerinventory, 39 - i, 8, (i > 1 ? 27 : 26) + i * 29) {
+                 @Override
+                 public int getMaxStackSize() {
+                     return 1;
+@@ -73,15 +74,30 @@ public class ContainerPlayer extends ContainerRecipeBook<InventoryCrafting> {
+ 
+         for (i = 0; i < 3; ++i) {
+             for (j = 0; j < 9; ++j) {
+-                this.a(new Slot(playerinventory, j + (i + 1) * 9, 8 + j * 18, 84 + i * 18));
++                this.a(new Slot(playerinventory, j + (i + 1) * 9, 115 + j * 22, 76 + i * 22));
+             }
+         }
+ 
+         for (i = 0; i < 9; ++i) {
+-            this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
++            this.a(new Slot(playerinventory, i, 115 + i * 22, 149));
+         }
+ 
+-        this.a(new Slot(playerinventory, 40, 77, 62) {
++        this.a(new Slot(playerinventory, 40, 17, 149) {
++        });
++
++        this.a(new Slot(playerinventory, 41, 71, 149) {
++            @Override
++            public boolean isAllowed(ItemStack itemstack) {
++                return (itemstack.getItem() instanceof ItemSword
++                        ||
++                        itemstack.getItem() instanceof ItemTool
++                        ||
++                        itemstack.getItem() instanceof ItemBow
++                        ||
++                        itemstack.getItem() instanceof ItemCrossbow
++                        ||
++                        itemstack.getItem() instanceof ItemTrident);
++            }
+         });
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerInventory.java b/src/main/java/net/minecraft/server/PlayerInventory.java
+index 3b65711b91c51ac7b4b5b2b0144ffd279fe60eeb..e050e8dd2c9feb63542a985ab45340cfa2d7d76e 100644
+--- a/src/main/java/net/minecraft/server/PlayerInventory.java
++++ b/src/main/java/net/minecraft/server/PlayerInventory.java
+@@ -17,6 +17,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+     public final NonNullList<ItemStack> items;
+     public final NonNullList<ItemStack> armor;
+     public final NonNullList<ItemStack> extraSlots;
++    public final NonNullList<ItemStack> backTool;
+     private final List<NonNullList<ItemStack>> f;List<NonNullList<ItemStack>> getComponents() { return f; } // Paper - OBFHELPER
+     public int itemInHandIndex;
+     public final EntityHuman player;
+@@ -28,7 +29,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+     private int maxStack = MAX_STACK;
+ 
+     public List<ItemStack> getContents() {
+-        List<ItemStack> combined = new ArrayList<ItemStack>(items.size() + armor.size() + extraSlots.size());
++        List<ItemStack> combined = new ArrayList<ItemStack>(items.size() + armor.size() + extraSlots.size() + backTool.size());
+         for (List<net.minecraft.server.ItemStack> sub : this.f) {
+             combined.addAll(sub);
+         }
+@@ -75,7 +76,8 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+         this.items = NonNullList.a(36, ItemStack.b);
+         this.armor = NonNullList.a(4, ItemStack.b);
+         this.extraSlots = NonNullList.a(1, ItemStack.b);
+-        this.f = ImmutableList.of(this.items, this.armor, this.extraSlots);
++        this.backTool = NonNullList.a(1, ItemStack.b);
++        this.f = ImmutableList.of(this.items, this.armor, this.extraSlots, this.backTool);
+         this.carried = ItemStack.b;
+         this.player = entityhuman;
+     }
+@@ -456,6 +458,15 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+             }
+         }
+ 
++        for (i = 0; i < this.backTool.size(); i++) {
++            if (!((ItemStack) this.backTool.get(i)).isEmpty()) {
++                nbttagcompound = new NBTTagCompound();
++                nbttagcompound.setByte("Slot", (byte) (i + 155));
++                ((ItemStack) this.backTool.get(i)).save(nbttagcompound);
++                nbttaglist.add(nbttagcompound);
++            }
++        }
++
+         return nbttaglist;
+     }
+ 
+@@ -463,6 +474,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+         this.items.clear();
+         this.armor.clear();
+         this.extraSlots.clear();
++        this.backTool.clear();
+ 
+         for (int i = 0; i < nbttaglist.size(); ++i) {
+             NBTTagCompound nbttagcompound = nbttaglist.getCompound(i);
+@@ -476,6 +488,8 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+                     this.armor.set(j - 100, itemstack);
+                 } else if (j >= 150 && j < this.extraSlots.size() + 150) {
+                     this.extraSlots.set(j - 150, itemstack);
++                } else if (j >= 155 && j < this.backTool.size() + 155) {
++                    this.backTool.set(j - 155, itemstack);
+                 }
+             }
+         }
+@@ -484,7 +498,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+ 
+     @Override
+     public int getSize() {
+-        return this.items.size() + this.armor.size() + this.extraSlots.size();
++        return this.items.size() + this.armor.size() + this.extraSlots.size() + this.backTool.size();
+     }
+ 
+     @Override
+@@ -503,6 +517,16 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+ 
+                         do {
+                             if (!iterator.hasNext()) {
++                                iterator = this.backTool.iterator();
++
++                                do {
++                                    if (!iterator.hasNext()) {
++                                        return true;
++                                    }
++
++                                    itemstack = (ItemStack) iterator.next();
++                                } while (itemstack.isEmpty());
++
+                                 return true;
+                             }
+ 

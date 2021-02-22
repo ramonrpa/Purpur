@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ramonrpa <ramon.rpa2018@gmail.com>
+Date: Sun, 21 Feb 2021 14:12:15 -0300
+Subject: [PATCH] Add System to change BoundingBox to Player
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 81f7d5bc581b42289a79121da15868999ab9feef..11360b6d2b084ac51fe1c4bb4a22831c2965d85f 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -29,9 +29,9 @@ import org.bukkit.event.player.PlayerVelocityEvent;
+ 
+ public abstract class EntityHuman extends EntityLiving {
+ 
+-    public static final EntitySize bh = EntitySize.b(0.6F, 1.8F);
++    public EntitySize bh = EntitySize.b(0.6F, 1.8F);
+     // CraftBukkit - decompile error
+-    private static final Map<EntityPose, EntitySize> b = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.bh).put(EntityPose.SLEEPING, EntityHuman.ah).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
++    private Map<EntityPose, EntitySize> b = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, bh).put(EntityPose.SLEEPING, EntityHuman.ah).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
+     private static final DataWatcherObject<Float> c = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.c);
+     private static final DataWatcherObject<Integer> d = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.b);
+     protected static final DataWatcherObject<Byte> bi = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a); public static DataWatcherObject<Byte> getSkinPartsWatcher() { return bi; } // Paper - OBFHELPER
+@@ -1904,6 +1904,20 @@ public abstract class EntityHuman extends EntityLiving {
+         return this.getProfile().getName();
+     }
+ 
++    public void setSizeBox(EntitySize size){
++        this.bh = size;
++        this.size = size;
++        EntitySize CrouchingSize = EntitySize.b(size.width, (size.height * 0.834F));
++        this.b = ImmutableMap.<EntityPose, EntitySize>builder()
++                .put(EntityPose.STANDING, this.bh)
++                .put(EntityPose.SLEEPING, EntityHuman.ah)
++                .put(EntityPose.FALL_FLYING, EntitySize.b(this.bh.width, 0.6F))
++                .put(EntityPose.SWIMMING, EntitySize.b(this.bh.width, 0.6F))
++                .put(EntityPose.SPIN_ATTACK, EntitySize.b(this.bh.width, 0.6F))
++                .put(EntityPose.CROUCHING, CrouchingSize)
++                .put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
++    }
++
+     @Override
+     public float b(EntityPose entitypose, EntitySize entitysize) {
+         switch (entitypose) {
+@@ -1912,9 +1926,9 @@ public abstract class EntityHuman extends EntityLiving {
+             case SPIN_ATTACK:
+                 return 0.4F;
+             case CROUCHING:
+-                return 1.27F;
++                return 0.84666666666F * entitysize.height;
+             default:
+-                return 1.62F;
++                return 0.9F * entitysize.height;
+         }
+     }
+ 
+@@ -2067,7 +2081,7 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+     @Override
+     public EntitySize a(EntityPose entitypose) {
+-        return (EntitySize) EntityHuman.b.getOrDefault(entitypose, EntityHuman.bh);
++        return (EntitySize) b.getOrDefault(entitypose, bh);
+     }
+ 
+     @Override
